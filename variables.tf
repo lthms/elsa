@@ -2,3 +2,20 @@ variable "region" {
   type = string
   description = "Region to deploy this stack"
 }
+
+variable "vultr_api_key" {
+  type = string
+  description = "API key used to configure the provider"
+  sensitive = true
+}
+
+variable "betterstack_source_token" {
+  type = string
+  description = "Source token for Betterstack ingestion"
+  sensitive = true
+}
+
+variable "betterstack_ingesting_host" {
+  type = string
+  description = ""
+}

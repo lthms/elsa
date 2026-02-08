@@ -1,5 +1,3 @@
-provider "vultr" {}
-
 terraform { 
   cloud { 
     organization = "lthms" 
@@ -15,4 +13,8 @@ terraform {
       version = "2.28.1"
     }
   }
+}
+
+provider "vultr" {
+  api_key = var.vultr_api_key
 }

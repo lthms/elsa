@@ -1,0 +1,14 @@
+receivers:
+  journald:
+
+exporters:
+  otlphttp:
+    endpoint: "https://{{ betterstack_ingesting_host }}"
+    headers:
+      Authorization: "Bearer {{ betterstack_source_token }}"
+
+service:
+  pipelines:
+    logs:
+      receivers: [journald]
+      exporters: [otlphttp]

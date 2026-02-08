@@ -7,8 +7,51 @@ passwd:
       ssh_authorized_keys:
         - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKajIx3VWRjhqIrza4ZnVnnI1g2q6NfMfMOcnSciP1Ws lthms@vanellope
 
+storage:
+  files:
+    - path: /etc/otelcol-contrib/config.yaml
+      contents:
+        local: files/otelcol.yaml
+      mode: 0644
+
 systemd:
   units:
+    - name: install-otelcol.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Install OpenTelemetry Collector Contrib
+        After=network-online.target nss-lookup.target
+        Wants=network-online.target nss-lookup.target
+        ConditionPathExists=!/var/lib/otelcol-contrib/otelcol-contrib
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStartPre=/bin/mkdir -p /var/lib/otelcol-contrib
+        ExecStart=/bin/bash -c 'curl --retry 5 --retry-delay 3 --retry-all-errors -sSfL https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.145.0/otelcol-contrib_0.145.0_linux_amd64.tar.gz | tar xz -C /var/lib/otelcol-contrib'
+        ExecStartPost=/bin/chmod +x /var/lib/otelcol-contrib/otelcol-contrib
+        ExecStartPost=/bin/chcon -t bin_t /var/lib/otelcol-contrib/otelcol-contrib
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: otelcol-contrib.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=OpenTelemetry Collector Contrib
+        After=install-otelcol.service network-online.target
+        Requires=install-otelcol.service
+
+        [Service]
+        ExecStart=/var/lib/otelcol-contrib/otelcol-contrib --config /etc/otelcol-contrib/config.yaml
+        Restart=always
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
     - name: format-vdb.service
       enabled: true
       contents: |
