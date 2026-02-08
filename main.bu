@@ -1,0 +1,56 @@
+variant: fcos
+version: 1.5.0
+
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKajIx3VWRjhqIrza4ZnVnnI1g2q6NfMfMOcnSciP1Ws lthms@vanellope
+
+systemd:
+  units:
+    - name: format-vdb.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Partition /dev/vdb if needed
+        After=dev-vdb.device
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/bin/bash -c 'blkid /dev/vdb | grep -q TYPE || sgdisk -Z -n 1:0:0 -t 1:8300 /dev/vdb'
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: mkfs-vdb1.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Format /dev/vdb1 if needed
+        After=dev-vdb1.device format-vdb.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/bin/bash -c 'blkid /dev/vdb1 | grep -q TYPE || mkfs.ext4 /dev/vdb1'
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: var-lib-rancher-k3s.mount
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Mount k3s data volume
+        After=mkfs-vdb1.service
+        Requires=mkfs-vdb1.service
+
+        [Mount]
+        What=/dev/vdb1
+        Where=/var/lib/rancher/k3s
+        Type=ext4
+
+        [Install]
+        WantedBy=multi-user.target
