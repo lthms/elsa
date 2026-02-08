@@ -19,3 +19,9 @@ variable "betterstack_ingesting_host" {
   type = string
   description = ""
 }
+
+variable "k3s_token" {
+  type = string
+  description = "Token for k3s agents to join the cluster"
+  sensitive = true
+}

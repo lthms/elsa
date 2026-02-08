@@ -1,3 +1,5 @@
 main.ign
 .terraform*
 *.tfvars
+certs/
+elsa.yaml

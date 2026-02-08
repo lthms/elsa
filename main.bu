@@ -13,6 +13,74 @@ storage:
       contents:
         local: files/otelcol.yaml
       mode: 0644
+    - path: /etc/rancher/k3s/config.yaml
+      contents:
+        local: files/k3s-config.yaml
+      mode: 0600
+    - path: /etc/rancher/k3s/tls/server-ca.crt
+      contents:
+        local: certs/server-ca.crt
+      mode: 0644
+    - path: /etc/rancher/k3s/tls/server-ca.key
+      contents:
+        local: certs/server-ca.key
+      mode: 0600
+    - path: /etc/rancher/k3s/tls/client-ca.crt
+      contents:
+        local: certs/client-ca.crt
+      mode: 0644
+    - path: /etc/rancher/k3s/tls/client-ca.key
+      contents:
+        local: certs/client-ca.key
+      mode: 0600
+    - path: /usr/local/bin/k3s-init.sh
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -euo pipefail
+
+          IFACE="enp1s0"
+          IP_FILE="/var/lib/rancher/k3s/.node-ip"
+          TLS_DIR="/var/lib/rancher/k3s/server/tls"
+          CA_SRC="/etc/rancher/k3s/tls"
+
+          # Detect node IP with bounded retries
+          NODE_IP=""
+          for i in $(seq 1 60); do
+            NODE_IP=$(ip -4 -o addr show "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
+            [ -n "$NODE_IP" ] && break
+            echo "Waiting for IP on $IFACE (attempt $i/60)..."
+            sleep 1
+          done
+
+          if [ -z "$NODE_IP" ]; then
+            echo "ERROR: Failed to detect IP on $IFACE after 60 attempts"
+            exit 1
+          fi
+
+          echo "Detected node IP: $NODE_IP"
+
+          # Compare with last known IP
+          OLD_IP=""
+          if [ -f "$IP_FILE" ]; then
+            OLD_IP=$(cat "$IP_FILE")
+          fi
+
+          if [ "$NODE_IP" != "$OLD_IP" ]; then
+            echo "IP changed ($OLD_IP -> $NODE_IP), wiping stale server state"
+            rm -rf "$TLS_DIR"
+            rm -rf /var/lib/rancher/k3s/server/db
+          fi
+
+          # Always copy CA certs
+          mkdir -p "$TLS_DIR"
+          cp "$CA_SRC"/server-ca.crt "$CA_SRC"/server-ca.key "$TLS_DIR"/
+          cp "$CA_SRC"/client-ca.crt "$CA_SRC"/client-ca.key "$TLS_DIR"/
+
+          # Write env file and persist current IP
+          echo "NODE_IP=$NODE_IP" > /run/k3s-env
+          echo "$NODE_IP" > "$IP_FILE"
 
 systemd:
   units:
@@ -22,12 +90,13 @@ systemd:
         [Unit]
         Description=Install OpenTelemetry Collector Contrib
         After=network-online.target nss-lookup.target
-        Wants=network-online.target nss-lookup.target
+        Requires=network-online.target nss-lookup.target
         ConditionPathExists=!/var/lib/otelcol-contrib/otelcol-contrib
 
         [Service]
         Type=oneshot
         RemainAfterExit=yes
+        ExecStartPre=/bin/bash -c 'for i in $(seq 1 30); do getent hosts github.com > /dev/null 2>&1 && exit 0; echo "Waiting for DNS (attempt $i/30)..."; sleep 2; done; echo "ERROR: DNS not available after 60s"; exit 1'
         ExecStartPre=/bin/mkdir -p /var/lib/otelcol-contrib
         ExecStart=/bin/bash -c 'curl --retry 5 --retry-delay 3 --retry-all-errors -sSfL https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.145.0/otelcol-contrib_0.145.0_linux_amd64.tar.gz | tar xz -C /var/lib/otelcol-contrib'
         ExecStartPost=/bin/chmod +x /var/lib/otelcol-contrib/otelcol-contrib
@@ -46,6 +115,60 @@ systemd:
 
         [Service]
         ExecStart=/var/lib/otelcol-contrib/otelcol-contrib --config /etc/otelcol-contrib/config.yaml
+        Restart=always
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: install-k3s.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Install k3s binary
+        After=network-online.target nss-lookup.target
+        Requires=network-online.target nss-lookup.target
+        ConditionPathExists=!/var/lib/k3s-bin/k3s
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStartPre=/bin/bash -c 'for i in $(seq 1 30); do getent hosts github.com > /dev/null 2>&1 && exit 0; echo "Waiting for DNS (attempt $i/30)..."; sleep 2; done; echo "ERROR: DNS not available after 60s"; exit 1'
+        ExecStartPre=/bin/mkdir -p /var/lib/k3s-bin
+        ExecStart=/bin/bash -c 'curl --retry 10 --retry-delay 5 --retry-all-errors -sSfL -o /var/lib/k3s-bin/k3s https://github.com/k3s-io/k3s/releases/download/v1.31.4%%2Bk3s1/k3s'
+        ExecStartPost=/bin/chmod +x /var/lib/k3s-bin/k3s
+        ExecStartPost=/bin/chcon -t bin_t /var/lib/k3s-bin/k3s
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: k3s-init.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Initialize k3s (IP detection, TLS cert management)
+        After=install-k3s.service var-lib-rancher-k3s.mount network-online.target
+        Requires=install-k3s.service var-lib-rancher-k3s.mount
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/local/bin/k3s-init.sh
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: k3s.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=k3s control plane
+        After=k3s-init.service network-online.target
+        Requires=k3s-init.service
+
+        [Service]
+        EnvironmentFile=/run/k3s-env
+        ExecStart=/var/lib/k3s-bin/k3s server --node-ip=${NODE_IP}
         Restart=always
         RestartSec=5
 
