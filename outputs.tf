@@ -1,3 +1,7 @@
 output "node_ip" {
   value = vultr_instance.control_plane.main_ip
 }
+
+output "node_vpc_ip" {
+  value = vultr_instance.control_plane.internal_ip
+}

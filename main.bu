@@ -33,6 +33,40 @@ storage:
       contents:
         local: certs/client-ca.key
       mode: 0600
+    - path: /usr/local/bin/configure-vpc.sh
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -euo pipefail
+
+          META=$(curl -sf http://169.254.169.254/v1.json)
+
+          VPC_IP=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .ipv4.address')
+          VPC_MASK=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .ipv4.netmask')
+          VPC_MAC=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .mac')
+
+          # Convert dotted netmask to CIDR prefix length
+          IFS=. read -r a b c d <<< "$VPC_MASK"
+          BITS=$(( (a<<24) + (b<<16) + (c<<8) + d ))
+          PREFIX=0
+          while [ $BITS -ne 0 ]; do
+            PREFIX=$(( PREFIX + (BITS & 1) ))
+            BITS=$(( BITS >> 1 ))
+          done
+
+          # Find the interface with this MAC address
+          DEV=$(ip -o link | awk -F': ' -v mac="$VPC_MAC" 'tolower($0) ~ mac {print $2}')
+
+          # Get MTU from metadata (Vultr VPCs typically use 1450)
+          VPC_MTU=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .mtu // "1450"')
+
+          echo "Configuring $DEV ($VPC_MAC) with $VPC_IP/$PREFIX mtu $VPC_MTU"
+          nmcli con add type ethernet con-name vpc ifname "$DEV" \
+            ipv4.method manual ipv4.addresses "$VPC_IP/$PREFIX" \
+            ipv4.never-default yes \
+            ethernet.mtu "$VPC_MTU"
+          nmcli con up vpc
     - path: /usr/local/bin/k3s-init.sh
       mode: 0755
       contents:
@@ -40,35 +74,56 @@ storage:
           #!/bin/bash
           set -euo pipefail
 
-          IFACE="enp1s0"
           IP_FILE="/var/lib/rancher/k3s/.node-ip"
           TLS_DIR="/var/lib/rancher/k3s/server/tls"
           CA_SRC="/etc/rancher/k3s/tls"
+          CONFIG_DIR="/etc/rancher/k3s/config.yaml.d"
 
-          # Detect node IP with bounded retries
-          NODE_IP=""
+          # Detect public IP on enp1s0
+          PUBLIC_IP=""
           for i in $(seq 1 60); do
-            NODE_IP=$(ip -4 -o addr show "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
-            [ -n "$NODE_IP" ] && break
-            echo "Waiting for IP on $IFACE (attempt $i/60)..."
+            PUBLIC_IP=$(ip -4 -o addr show enp1s0 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
+            [ -n "$PUBLIC_IP" ] && break
+            echo "Waiting for public IP on enp1s0 (attempt $i/60)..."
             sleep 1
           done
 
-          if [ -z "$NODE_IP" ]; then
-            echo "ERROR: Failed to detect IP on $IFACE after 60 attempts"
+          if [ -z "$PUBLIC_IP" ]; then
+            echo "ERROR: Failed to detect public IP on enp1s0 after 60 attempts"
             exit 1
           fi
 
-          echo "Detected node IP: $NODE_IP"
+          echo "Detected public IP: $PUBLIC_IP"
 
-          # Compare with last known IP
+          # Detect VPC IP and interface (10.0.0.x range, brought up by configure-vpc.service)
+          VPC_IP=""
+          VPC_IFACE=""
+          for i in $(seq 1 60); do
+            VPC_LINE=$(ip -4 -o addr show 2>/dev/null | grep '10\.0\.0\.' | head -1)
+            if [ -n "$VPC_LINE" ]; then
+              VPC_IP=$(echo "$VPC_LINE" | awk '{print $4}' | cut -d/ -f1)
+              VPC_IFACE=$(echo "$VPC_LINE" | awk '{print $2}')
+              break
+            fi
+            echo "Waiting for VPC IP in 10.0.0.0/24 (attempt $i/60)..."
+            sleep 1
+          done
+
+          if [ -z "$VPC_IP" ]; then
+            echo "ERROR: Failed to detect VPC IP after 60 attempts"
+            exit 1
+          fi
+
+          echo "Detected VPC IP: $VPC_IP on $VPC_IFACE"
+
+          # Compare with last known VPC IP
           OLD_IP=""
           if [ -f "$IP_FILE" ]; then
             OLD_IP=$(cat "$IP_FILE")
           fi
 
-          if [ "$NODE_IP" != "$OLD_IP" ]; then
-            echo "IP changed ($OLD_IP -> $NODE_IP), wiping stale server state"
+          if [ "$VPC_IP" != "$OLD_IP" ]; then
+            echo "IP changed ($OLD_IP -> $VPC_IP), wiping stale server state"
             rm -rf "$TLS_DIR"
             rm -rf /var/lib/rancher/k3s/server/db
           fi
@@ -78,9 +133,15 @@ storage:
           cp "$CA_SRC"/server-ca.crt "$CA_SRC"/server-ca.key "$TLS_DIR"/
           cp "$CA_SRC"/client-ca.crt "$CA_SRC"/client-ca.key "$TLS_DIR"/
 
-          # Write env file and persist current IP
-          echo "NODE_IP=$NODE_IP" > /run/k3s-env
-          echo "$NODE_IP" > "$IP_FILE"
+          # Write k3s drop-in config and persist current IP
+          mkdir -p "$CONFIG_DIR"
+          cat > "$CONFIG_DIR/50-vpc.yaml" <<EOF
+          node-ip: "${VPC_IP}"
+          tls-san:
+            - "${PUBLIC_IP}"
+          flannel-iface: "${VPC_IFACE}"
+          EOF
+          echo "$VPC_IP" > "$IP_FILE"
 
 systemd:
   units:
@@ -142,13 +203,29 @@ systemd:
         [Install]
         WantedBy=multi-user.target
 
+    - name: configure-vpc.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Configure VPC network interface from Vultr metadata
+        After=network-online.target
+        Requires=network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/local/bin/configure-vpc.sh
+
+        [Install]
+        WantedBy=multi-user.target
+
     - name: k3s-init.service
       enabled: true
       contents: |
         [Unit]
         Description=Initialize k3s (IP detection, TLS cert management)
-        After=install-k3s.service var-lib-rancher-k3s.mount network-online.target
-        Requires=install-k3s.service var-lib-rancher-k3s.mount
+        After=install-k3s.service var-lib-rancher-k3s.mount configure-vpc.service network-online.target
+        Requires=install-k3s.service var-lib-rancher-k3s.mount configure-vpc.service
 
         [Service]
         Type=oneshot
@@ -167,8 +244,7 @@ systemd:
         Requires=k3s-init.service
 
         [Service]
-        EnvironmentFile=/run/k3s-env
-        ExecStart=/var/lib/k3s-bin/k3s server --node-ip=${NODE_IP}
+        ExecStart=/var/lib/k3s-bin/k3s server
         Restart=always
         RestartSec=5
 
