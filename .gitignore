@@ -1,4 +1,4 @@
-main.ign
+control_plane.ign
 .terraform*
 *.tfvars
 certs/

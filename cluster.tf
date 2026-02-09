@@ -16,7 +16,7 @@ resource "vultr_instance" "control_plane" {
   plan = "vc2-1c-2gb"
   os_id = "391"
 
-  user_data = file("main.ign")
+  user_data = file("control_plane.ign")
 
   vpc_ids = [vultr_vpc.cluster.id]
 
