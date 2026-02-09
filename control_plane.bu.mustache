@@ -112,26 +112,40 @@ storage:
           flannel-iface: "${VPC_IFACE}"
           EOF
           echo "$VPC_IP" > "$IP_FILE"
+    - path: /usr/local/bin/rebase-os.sh
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -euo pipefail
+
+          STAMP="/var/lib/.rebase-complete"
+
+          if [ -f "$STAMP" ]; then
+            echo "Rebase already completed, nothing to do."
+            exit 0
+          fi
+
+          IMAGE="{{ registry_region }}.vultrcr.com/{{ registry_name }}/elsa-fcos-layer:latest"
+          echo "Rebasing to ${IMAGE}..."
+          rpm-ostree rebase ostree-unverified-registry:${IMAGE}
+          touch "$STAMP"
+          systemctl reboot
 
 systemd:
   units:
-    - name: install-otelcol.service
+    - name: rebase-os.service
       enabled: true
       contents: |
         [Unit]
-        Description=Install OpenTelemetry Collector Contrib
-        After=network-online.target nss-lookup.target
-        Requires=network-online.target nss-lookup.target
-        ConditionPathExists=!/var/lib/otelcol-contrib/otelcol-contrib
+        Description=Rebase to custom FCOS image
+        After=network-online.target
+        Requires=network-online.target
 
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStartPre=/bin/bash -c 'for i in $(seq 1 30); do getent hosts github.com > /dev/null 2>&1 && exit 0; echo "Waiting for DNS (attempt $i/30)..."; sleep 2; done; echo "ERROR: DNS not available after 60s"; exit 1'
-        ExecStartPre=/bin/mkdir -p /var/lib/otelcol-contrib
-        ExecStart=/bin/bash -c 'curl --retry 5 --retry-delay 3 --retry-all-errors -sSfL https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.145.0/otelcol-contrib_0.145.0_linux_amd64.tar.gz | tar xz -C /var/lib/otelcol-contrib'
-        ExecStartPost=/bin/chmod +x /var/lib/otelcol-contrib/otelcol-contrib
-        ExecStartPost=/bin/chcon -t bin_t /var/lib/otelcol-contrib/otelcol-contrib
+        ExecStart=/usr/local/bin/rebase-os.sh
 
         [Install]
         WantedBy=multi-user.target
@@ -141,34 +155,13 @@ systemd:
       contents: |
         [Unit]
         Description=OpenTelemetry Collector Contrib
-        After=install-otelcol.service network-online.target
-        Requires=install-otelcol.service
+        After=rebase-os.service network-online.target
+        Requires=rebase-os.service
 
         [Service]
-        ExecStart=/var/lib/otelcol-contrib/otelcol-contrib --config /etc/otelcol-contrib/config.yaml
+        ExecStart=/usr/bin/otelcol-contrib --config /etc/otelcol-contrib/config.yaml
         Restart=always
         RestartSec=5
-
-        [Install]
-        WantedBy=multi-user.target
-
-    - name: install-k3s.service
-      enabled: true
-      contents: |
-        [Unit]
-        Description=Install k3s binary
-        After=network-online.target nss-lookup.target
-        Requires=network-online.target nss-lookup.target
-        ConditionPathExists=!/var/lib/k3s-bin/k3s
-
-        [Service]
-        Type=oneshot
-        RemainAfterExit=yes
-        ExecStartPre=/bin/bash -c 'for i in $(seq 1 30); do getent hosts github.com > /dev/null 2>&1 && exit 0; echo "Waiting for DNS (attempt $i/30)..."; sleep 2; done; echo "ERROR: DNS not available after 60s"; exit 1'
-        ExecStartPre=/bin/mkdir -p /var/lib/k3s-bin
-        ExecStart=/bin/bash -c 'curl --retry 10 --retry-delay 5 --retry-all-errors -sSfL -o /var/lib/k3s-bin/k3s https://github.com/k3s-io/k3s/releases/download/v1.31.4%%2Bk3s1/k3s'
-        ExecStartPost=/bin/chmod +x /var/lib/k3s-bin/k3s
-        ExecStartPost=/bin/chcon -t bin_t /var/lib/k3s-bin/k3s
 
         [Install]
         WantedBy=multi-user.target
@@ -194,8 +187,8 @@ systemd:
       contents: |
         [Unit]
         Description=Initialize k3s (IP detection, TLS cert management)
-        After=install-k3s.service var-lib-rancher-k3s.mount configure-vpc.service network-online.target
-        Requires=install-k3s.service var-lib-rancher-k3s.mount configure-vpc.service
+        After=rebase-os.service var-lib-rancher-k3s.mount configure-vpc.service network-online.target
+        Requires=rebase-os.service var-lib-rancher-k3s.mount configure-vpc.service
 
         [Service]
         Type=oneshot
@@ -214,7 +207,7 @@ systemd:
         Requires=k3s-init.service
 
         [Service]
-        ExecStart=/var/lib/k3s-bin/k3s server
+        ExecStart=/usr/bin/k3s server
         Restart=always
         RestartSec=5
 
@@ -226,7 +219,9 @@ systemd:
       contents: |
         [Unit]
         Description=Partition /dev/vdb if needed
+        DefaultDependencies=no
         After=dev-vdb.device
+        Before=local-fs.target
 
         [Service]
         Type=oneshot
@@ -241,7 +236,9 @@ systemd:
       contents: |
         [Unit]
         Description=Format /dev/vdb1 if needed
+        DefaultDependencies=no
         After=dev-vdb1.device format-vdb.service
+        Before=local-fs.target
 
         [Service]
         Type=oneshot

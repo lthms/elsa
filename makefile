@@ -5,6 +5,7 @@ CERTS = certs/server-ca.crt certs/server-ca.key certs/client-ca.crt certs/client
 VARS ?= main.tfvars
 TF_VAR_betterstack_source_token ?= unset
 TF_VAR_k3s_token ?= unset
+CONTAINER_TOOL ?= docker
 
 .PHONY: deploy
 deploy: control_plane.ign agent.ign
@@ -17,6 +18,14 @@ plan: control_plane.ign agent.ign
 .PHONY: destroy
 destroy: control_plane.ign agent.ign
 	@terraform destroy -var-file=$(VARS)
+
+.PHONY: image
+image:
+	@$(CONTAINER_TOOL) login $$(terraform output -raw registry_url) \
+		-u $$(terraform output -raw registry_user) \
+		-p $$(terraform output -raw registry_password)
+	@$(CONTAINER_TOOL) build -f Containerfile -t $$(terraform output -raw registry_url)/elsa-fcos-layer:latest .
+	@$(CONTAINER_TOOL) push $$(terraform output -raw registry_url)/elsa-fcos-layer:latest
 
 .PHONY: kubeconfig
 kubeconfig: certs/client.crt certs/server-ca.crt certs/client.key
@@ -72,4 +81,4 @@ certs/client.crt: certs/client.key certs/client-ca.crt certs/client-ca.key
 		yq ".k3s_token = \"$(TF_VAR_k3s_token)\"" | \
 		mustache $< > $@
 
-.INTERMEDIATE: $(RENDERED) control_plane.ign agent.ign
+.INTERMEDIATE: $(RENDERED) control_plane.bu agent.bu control_plane.ign agent.ign

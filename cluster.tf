@@ -12,24 +12,24 @@ resource "vultr_block_storage" "control_plane_storage" {
 }
 
 resource "vultr_instance" "control_plane" {
-  region = var.region
-  plan = "vc2-1c-2gb"
-  os_id = "391"
+  region  = var.region
+  plan    = "vc2-1c-2gb"
+  os_id   = "391"
 
   user_data = file("control_plane.ign")
 
   vpc_ids = [vultr_vpc.cluster.id]
 
-  label = "elsa-control-plane"
-  tags = ["elsa"]
+  label    = "elsa-control-plane"
+  tags     = ["elsa"]
   hostname = "elsa-control-plane"
 }
 
 resource "vultr_instance" "agent" {
-  count  = var.agent_count
-  region = var.region
-  plan   = "vc2-1c-2gb"
-  os_id  = "391"
+  count   = var.agent_count
+  region  = var.region
+  plan    = "vc2-1c-2gb"
+  os_id   = "391"
 
   user_data = replace(file("agent.ign"), "__K3S_SERVER_IP__", vultr_instance.control_plane.internal_ip)
 

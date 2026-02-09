@@ -1,4 +1,5 @@
 control_plane.ign
+agent.ign
 .terraform*
 *.tfvars
 certs/
