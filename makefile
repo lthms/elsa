@@ -7,15 +7,15 @@ TF_VAR_betterstack_source_token ?= unset
 TF_VAR_k3s_token ?= unset
 
 .PHONY: deploy
-deploy: control_plane.ign
+deploy: control_plane.ign agent.ign
 	@terraform apply -var-file=$(VARS)
 
 .PHONY: plan
-plan: control_plane.ign
+plan: control_plane.ign agent.ign
 	@terraform plan -var-file=$(VARS)
 
 .PHONY: destroy
-destroy: control_plane.ign
+destroy: control_plane.ign agent.ign
 	@terraform destroy -var-file=$(VARS)
 
 .PHONY: kubeconfig
@@ -38,6 +38,9 @@ kubeconfig: certs/client.crt certs/server-ca.crt certs/client.key
 	kubectl config use-context elsa --kubeconfig=elsa.yaml
 
 control_plane.ign: control_plane.bu $(FILES) $(CERTS)
+	@butane -d . $< > $@
+
+agent.ign: agent.bu $(FILES)
 	@butane -d . $< > $@
 
 certs/server-ca.key:
@@ -69,4 +72,4 @@ certs/client.crt: certs/client.key certs/client-ca.crt certs/client-ca.key
 		yq ".k3s_token = \"$(TF_VAR_k3s_token)\"" | \
 		mustache $< > $@
 
-.INTERMEDIATE: $(RENDERED) control_plane.ign
+.INTERMEDIATE: $(RENDERED) control_plane.ign agent.ign

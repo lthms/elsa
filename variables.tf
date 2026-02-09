@@ -25,3 +25,8 @@ variable "k3s_token" {
   description = "Token for k3s agents to join the cluster"
   sensitive = true
 }
+
+variable "agent_count" {
+  type    = number
+  default = 0
+}
