@@ -1,7 +1,7 @@
 FROM quay.io/fedora/fedora-coreos:stable
 
 RUN curl -sSfL -o /usr/bin/k3s \
-      "https://github.com/k3s-io/k3s/releases/download/v1.31.4%2Bk3s1/k3s" && \
+      "https://github.com/k3s-io/k3s/releases/download/v1.35.1%2Bk3s1/k3s" && \
     chmod +x /usr/bin/k3s
 
 RUN curl -sSfL \

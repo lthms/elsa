@@ -24,7 +24,7 @@ image:
 	@$(CONTAINER_TOOL) login $$(terraform output -raw registry_url) \
 		-u $$(terraform output -raw registry_user) \
 		-p $$(terraform output -raw registry_password)
-	@$(CONTAINER_TOOL) build -f Containerfile -t $$(terraform output -raw registry_url)/elsa-fcos-layer:latest .
+	@$(CONTAINER_TOOL) build --pull -f Containerfile -t $$(terraform output -raw registry_url)/elsa-fcos-layer:latest .
 	@$(CONTAINER_TOOL) push $$(terraform output -raw registry_url)/elsa-fcos-layer:latest
 
 .PHONY: kubeconfig
