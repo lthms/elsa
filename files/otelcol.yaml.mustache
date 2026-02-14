@@ -1,5 +1,25 @@
 receivers:
   journald:
+  hostmetrics:
+    collection_interval: 60s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      filesystem:
+      network:
+      load:
+
+processors:
+  resourcedetection:
+    detectors: [system]
+    system:
+      hostname_sources: [os]
+      resource_attributes:
+        host.name:
+          enabled: true
+        os.type:
+          enabled: true
 
 exporters:
   otlphttp:
@@ -11,4 +31,9 @@ service:
   pipelines:
     logs:
       receivers: [journald]
+      processors: [resourcedetection]
+      exporters: [otlphttp]
+    metrics:
+      receivers: [hostmetrics]
+      processors: [resourcedetection]
       exporters: [otlphttp]
