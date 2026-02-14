@@ -78,10 +78,19 @@ certs/client.crt: certs/client.key certs/client-ca.crt certs/client-ca.key
 FORCE:
 .PHONY: FORCE
 
+define mustache_render
+@yq -oy -p=hcl $(VARS) | \
+	yq ".betterstack_source_token = \"$(TF_VAR_betterstack_source_token)\"" | \
+	yq ".k3s_token = \"$(TF_VAR_k3s_token)\"" | \
+	mustache $< > $@
+endef
+
+# GNU Make's built-in %.sh cancel rule blocks the match-anything rule below
+# from applying to .sh targets, so we need a more specific pattern rule.
+%.sh: %.sh.mustache FORCE
+	$(mustache_render)
+
 %: %.mustache FORCE
-	@yq -oy -p=hcl $(VARS) | \
-		yq ".betterstack_source_token = \"$(TF_VAR_betterstack_source_token)\"" | \
-		yq ".k3s_token = \"$(TF_VAR_k3s_token)\"" | \
-		mustache $< > $@
+	$(mustache_render)
 
 .INTERMEDIATE: $(RENDERED) control_plane.bu agent.bu control_plane.ign agent.ign

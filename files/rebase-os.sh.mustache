@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+STAMP="/var/lib/.rebase-complete"
+
+if [ -f "$STAMP" ]; then
+  echo "Rebase already completed, nothing to do."
+  exit 0
+fi
+
+IMAGE="{{ registry_region }}.vultrcr.com/{{ registry_name }}/elsa-fcos-layer:latest"
+echo "Rebasing to ${IMAGE}..."
+rpm-ostree rebase ostree-unverified-registry:${IMAGE}
+touch "$STAMP"
+systemctl reboot
