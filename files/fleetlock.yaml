@@ -1,0 +1,136 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fleetlock
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fleetlock
+  namespace: fleetlock
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fleetlock
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - list
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - pods/eviction
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fleetlock
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fleetlock
+subjects:
+  - kind: ServiceAccount
+    name: fleetlock
+    namespace: fleetlock
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fleetlock
+  namespace: fleetlock
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fleetlock
+  namespace: fleetlock
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fleetlock
+subjects:
+  - kind: ServiceAccount
+    name: fleetlock
+    namespace: fleetlock
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleetlock
+  namespace: fleetlock
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: fleetlock
+  template:
+    metadata:
+      labels:
+        name: fleetlock
+    spec:
+      serviceAccountName: fleetlock
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: "true"
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: fleetlock
+          image: quay.io/poseidon/fleetlock:v0.4.0
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 30m
+              memory: 30Mi
+            limits:
+              cpu: 50m
+              memory: 50Mi
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              port: 8080
+              path: /-/healthy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleetlock
+  namespace: fleetlock
+spec:
+  type: ClusterIP
+  clusterIP: 10.43.0.100
+  selector:
+    name: fleetlock
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

@@ -119,6 +119,70 @@ storage:
           for f in /etc/rancher/k3s/manifests/*.yaml; do
             [ -f "$f" ] && ln -sf "$f" /var/lib/rancher/k3s/server/manifests/
           done
+    - path: /etc/rancher/k3s/manifests/fleetlock.yaml
+      contents:
+        local: files/fleetlock.yaml
+      mode: 0644
+    - path: /usr/local/bin/upgrade-os.sh
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -euo pipefail
+
+          FLEETLOCK_URL="http://10.43.0.100:8080"
+          MACHINE_ID=$(cat /etc/machine-id)
+
+          echo "Checking for OS image upgrade..."
+          rc=0
+          rpm-ostree upgrade --unchanged-exit-77 || rc=$?
+
+          if [ "$rc" -eq 77 ]; then
+            echo "System is up to date."
+            exit 0
+          elif [ "$rc" -ne 0 ]; then
+            echo "ERROR: rpm-ostree upgrade failed (exit $rc)"
+            exit 1
+          fi
+
+          echo "Upgrade staged. Acquiring reboot lock..."
+          while true; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST "$FLEETLOCK_URL/v1/pre-reboot" \
+              -H "fleet-lock-protocol: true" \
+              -d "{\"client_params\":{\"id\":\"$MACHINE_ID\",\"group\":\"default\"}}") || true
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Lock acquired. Rebooting..."
+              systemctl reboot
+              exit 0
+            fi
+            echo "Lock not available (HTTP $HTTP_CODE), retrying in 30s..."
+            sleep 30
+          done
+    - path: /usr/local/bin/fleetlock-release.sh
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -euo pipefail
+
+          FLEETLOCK_URL="http://10.43.0.100:8080"
+          MACHINE_ID=$(cat /etc/machine-id)
+
+          for i in $(seq 1 84); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST "$FLEETLOCK_URL/v1/steady-state" \
+              -H "fleet-lock-protocol: true" \
+              -d "{\"client_params\":{\"id\":\"$MACHINE_ID\",\"group\":\"default\"}}") || true
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "FleetLock released."
+              exit 0
+            fi
+            echo "Waiting for FleetLock server (attempt $i/84)..."
+            sleep 5
+          done
+          echo "WARNING: Failed to release FleetLock after 84 attempts"
+          exit 1
     - path: /usr/local/bin/rebase-os.sh
       mode: 0755
       contents:
@@ -217,6 +281,49 @@ systemd:
         ExecStart=/usr/bin/k3s server
         Restart=always
         RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: upgrade-os.service
+      enabled: false
+      contents: |
+        [Unit]
+        Description=Check for and apply OS image upgrades
+        After=network-online.target
+        Requires=network-online.target
+        ConditionPathExists=/var/lib/.rebase-complete
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/local/bin/upgrade-os.sh
+
+    - name: upgrade-os.timer
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Periodic OS image upgrade check
+
+        [Timer]
+        OnBootSec=5min
+        OnUnitActiveSec=6h
+        RandomizedDelaySec=30min
+
+        [Install]
+        WantedBy=timers.target
+
+    - name: fleetlock-release.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Release FleetLock after reboot
+        After=network-online.target k3s.service
+        Requires=network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/local/bin/fleetlock-release.sh
 
         [Install]
         WantedBy=multi-user.target
