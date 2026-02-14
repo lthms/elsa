@@ -31,12 +31,3 @@ variable "agent_count" {
   default = 0
 }
 
-variable "registry_name" {
-  type        = string
-  description = "Name of the Vultr container registry"
-}
-
-variable "registry_region" {
-  type        = string
-  description = "Region of the Vultr container registry"
-}

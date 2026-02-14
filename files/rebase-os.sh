@@ -8,7 +8,7 @@ if [ -f "$STAMP" ]; then
   exit 0
 fi
 
-IMAGE="{{ registry_region }}.vultrcr.com/{{ registry_name }}/elsa-fcos-layer:latest"
+IMAGE="ghcr.io/lthms/elsa-fcos-layer:latest"
 echo "Rebasing to ${IMAGE}..."
 rpm-ostree rebase ostree-unverified-registry:${IMAGE}
 touch "$STAMP"
