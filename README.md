@@ -5,12 +5,10 @@ coordinated upgrades.
 
 ## Prerequisites
 
-| Tool | Version |
-| --- | --- |
-| `terraform` | 1.14.3 |
-| `yq` | 4.50.1 |
-| `butane` | 0.25.1 |
-| `mustache` | 1.4.0 |
+- `terraform`
+- `yq`
+- `butane`
+- `mustache`
 
 Tools are managed by [mise](https://mise.jdx.dev); run `mise install`
 to set them up.

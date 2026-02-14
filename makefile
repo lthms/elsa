@@ -50,7 +50,7 @@ setup:
 readme: ## Regenerate README.md from its template
 readme: README.md
 
-README.md: README.md.mustache mise.toml variables.tf makefile readme-data.sh
+README.md: README.md.mustache variables.tf makefile readme-data.sh
 	@./readme-data.sh | mustache README.md.mustache > README.md
 
 control_plane.ign: control_plane.bu $(FILES) $(CERTS)

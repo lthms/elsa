@@ -2,8 +2,7 @@
 set -euo pipefail
 
 tools=$(yq -p=toml -o=json '.tools | to_entries | map({
-  "name": (.key | sub("github:.*/", "")),
-  "version": .value
+  "name": (.key | sub("github:.*/", ""))
 })' mise.toml)
 
 targets=$(grep -E '^[a-z][a-z_-]*: ##' makefile \
