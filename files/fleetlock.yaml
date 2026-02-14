@@ -34,26 +34,6 @@ rules:
       - pods/eviction
     verbs:
       - create
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: fleetlock
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: fleetlock
-subjects:
-  - kind: ServiceAccount
-    name: fleetlock
-    namespace: fleetlock
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: fleetlock
-  namespace: fleetlock
-rules:
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -64,13 +44,12 @@ rules:
       - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: fleetlock
-  namespace: fleetlock
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: fleetlock
 subjects:
   - kind: ServiceAccount
