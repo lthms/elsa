@@ -18,7 +18,7 @@ terraform {
     }
     betteruptime = {
       source  = "BetterStackHQ/better-uptime"
-      version = "~> 0.11"
+      version = "~> 0.20"
     }
   }
 }
