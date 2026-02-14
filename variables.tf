@@ -61,6 +61,11 @@ variable "status_page_timezone" {
   description = "Timezone for the Betterstack status page"
 }
 
+variable "acme_email" {
+  type        = string
+  description = "Email address for Let's Encrypt ACME registration"
+}
+
 variable "control_plane_plan" {
   type        = string
   description = "Vultr instance plan for the control plane node"

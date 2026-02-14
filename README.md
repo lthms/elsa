@@ -44,6 +44,7 @@ Variables are defined in `variables.tf` and supplied via a
 | `status_page_company_url` | Company URL shown on the Betterstack status page |
 | `status_page_subdomain` | Subdomain for the Betterstack status page |
 | `status_page_timezone` | Timezone for the Betterstack status page |
+| `acme_email` | Email address for Let&#39;s Encrypt ACME registration |
 
 ### Optional
 

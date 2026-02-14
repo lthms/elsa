@@ -49,6 +49,10 @@ storage:
       contents:
         local: files/fleetlock.yaml
       mode: 0644
+    - path: /etc/rancher/k3s/manifests/traefik-config.yaml
+      contents:
+        local: files/traefik-config.yaml
+      mode: 0644
     - path: /usr/local/bin/upgrade-os.sh
       mode: 0755
       contents:
