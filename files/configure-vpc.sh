@@ -27,6 +27,7 @@ DEV=$(ip -o link | awk -F': ' -v mac="$VPC_MAC" 'tolower($0) ~ mac {print $2}')
 VPC_MTU=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .mtu // "1450"')
 
 echo "Configuring $DEV ($VPC_MAC) with $VPC_IP/$PREFIX mtu $VPC_MTU"
+nmcli con delete vpc 2>/dev/null || true
 nmcli con add type ethernet con-name vpc ifname "$DEV" \
   ipv4.method manual ipv4.addresses "$VPC_IP/$PREFIX" \
   ipv4.never-default yes \
