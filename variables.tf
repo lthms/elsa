@@ -57,6 +57,24 @@ variable "status_page_timezone" {
   description = "Timezone for the Betterstack status page"
 }
 
+variable "control_plane_plan" {
+  type        = string
+  description = "Vultr instance plan for the control plane node"
+  default     = "vc2-1c-2gb"
+}
+
+variable "agent_plan" {
+  type        = string
+  description = "Vultr instance plan for agent nodes"
+  default     = "vc2-1c-2gb"
+}
+
+variable "control_plane_storage_gb" {
+  type        = number
+  description = "Block storage size in GB for the control plane"
+  default     = 10
+}
+
 variable "agent_count" {
   type    = number
   default = 0

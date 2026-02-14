@@ -6,14 +6,14 @@ resource "vultr_vpc" "cluster" {
 }
 
 resource "vultr_block_storage" "control_plane_storage" {
-  size_gb = 10
+  size_gb = var.control_plane_storage_gb
   region = var.region
   attached_to_instance = vultr_instance.control_plane.id
 }
 
 resource "vultr_instance" "control_plane" {
   region  = var.region
-  plan    = "vc2-1c-2gb"
+  plan    = var.control_plane_plan
   os_id   = "391"
 
   user_data = file("control_plane.ign")
@@ -28,7 +28,7 @@ resource "vultr_instance" "control_plane" {
 resource "vultr_instance" "agent" {
   count   = var.agent_count
   region  = var.region
-  plan    = "vc2-1c-2gb"
+  plan    = var.agent_plan
   os_id   = "391"
 
   user_data = replace(file("agent.ign"), "__K3S_SERVER_IP__", vultr_instance.control_plane.internal_ip)
