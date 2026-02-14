@@ -112,6 +112,13 @@ storage:
           flannel-iface: "${VPC_IFACE}"
           EOF
           echo "$VPC_IP" > "$IP_FILE"
+
+          # Sync auto-deploy manifests into k3s data volume via symlinks
+          mkdir -p /var/lib/rancher/k3s/server/manifests
+          find /var/lib/rancher/k3s/server/manifests -maxdepth 1 -type l ! -exec test -e {} \; -delete
+          for f in /etc/rancher/k3s/manifests/*.yaml; do
+            [ -f "$f" ] && ln -sf "$f" /var/lib/rancher/k3s/server/manifests/
+          done
     - path: /usr/local/bin/rebase-os.sh
       mode: 0755
       contents:
