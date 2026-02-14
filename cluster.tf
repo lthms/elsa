@@ -35,7 +35,15 @@ resource "vultr_instance" "agent" {
 
   vpc_ids = [vultr_vpc.cluster.id]
 
+  reserved_ip_id = count.index == 0 ? vultr_reserved_ip.public_ip.id : null
+
   label    = "elsa-agent-${count.index}"
   tags     = ["elsa"]
   hostname = "elsa-agent-${count.index}"
+}
+
+resource "vultr_reserved_ip" "public_ip" {
+  region  = var.region
+  ip_type = "v4"
+  label   = "elsa-public-ip"
 }
