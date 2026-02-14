@@ -17,10 +17,10 @@ resource "betteruptime_monitor" "agent" {
 }
 
 resource "betteruptime_status_page" "main" {
-  company_name = "lthms’ cloud lab"
-  company_url  = "https://soap.coffee/~lthms"
-  subdomain    = "lthms-cloud-lab"
-  timezone     = "Europe/Paris"
+  company_name = var.status_page_company_name
+  company_url  = var.status_page_company_url
+  subdomain    = var.status_page_subdomain
+  timezone     = var.status_page_timezone
 }
 
 resource "betteruptime_status_page_resource" "k3s_api" {

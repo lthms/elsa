@@ -32,6 +32,31 @@ variable "betterstack_api_token" {
   sensitive   = true
 }
 
+variable "ssh_authorized_key" {
+  type        = string
+  description = "SSH public key for the core user"
+}
+
+variable "status_page_company_name" {
+  type        = string
+  description = "Company name shown on the Betterstack status page"
+}
+
+variable "status_page_company_url" {
+  type        = string
+  description = "Company URL shown on the Betterstack status page"
+}
+
+variable "status_page_subdomain" {
+  type        = string
+  description = "Subdomain for the Betterstack status page"
+}
+
+variable "status_page_timezone" {
+  type        = string
+  description = "Timezone for the Betterstack status page"
+}
+
 variable "agent_count" {
   type    = number
   default = 0
