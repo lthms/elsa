@@ -13,3 +13,7 @@ output "agent_ips" {
 output "agent_vpc_ips" {
   value = vultr_instance.agent[*].internal_ip
 }
+
+output "status_page_url" {
+  value = "https://${betteruptime_status_page.main.subdomain}.betteruptime.com"
+}

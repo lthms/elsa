@@ -26,6 +26,12 @@ variable "k3s_token" {
   sensitive = true
 }
 
+variable "betterstack_api_token" {
+  type        = string
+  description = "API token for Betterstack Uptime provider"
+  sensitive   = true
+}
+
 variable "agent_count" {
   type    = number
   default = 0
