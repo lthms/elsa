@@ -16,8 +16,8 @@ variable "betterstack_source_token" {
 }
 
 variable "betterstack_ingesting_host" {
-  type = string
-  description = ""
+  type        = string
+  description = "Host endpoint for Betterstack log ingestion"
 }
 
 variable "k3s_token" {
@@ -76,7 +76,8 @@ variable "control_plane_storage_gb" {
 }
 
 variable "agent_count" {
-  type    = number
-  default = 0
+  type        = number
+  description = "Number of k3s agent nodes to deploy"
+  default     = 0
 }
 

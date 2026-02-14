@@ -5,25 +5,24 @@ CERTS = certs/server-ca.crt certs/server-ca.key certs/client-ca.crt certs/client
 VARS ?= main.tfvars
 TF_VAR_betterstack_source_token ?= unset
 TF_VAR_k3s_token ?= unset
-CONTAINER_TOOL ?= docker
 
 .PHONY: deploy
+deploy: ## Apply the Terraform configuration
 deploy: control_plane.ign agent.ign
 	@terraform apply -var-file=$(VARS)
 
 .PHONY: plan
+plan: ## Preview infrastructure changes
 plan: control_plane.ign agent.ign
 	@terraform plan -var-file=$(VARS)
 
 .PHONY: destroy
+destroy: ## Tear down all infrastructure
 destroy: control_plane.ign agent.ign
 	@terraform destroy -var-file=$(VARS)
 
-.PHONY: image
-image:
-	@$(CONTAINER_TOOL) build --pull -f Containerfile -t ghcr.io/lthms/elsa-fcos-layer:latest .
-
 .PHONY: kubeconfig
+kubeconfig: ## Generate a local kubeconfig for the cluster
 kubeconfig: certs/client.crt certs/server-ca.crt certs/client.key
 	@NODE_IP=$$(terraform output -raw node_ip) && \
 	kubectl config set-cluster elsa \
@@ -41,6 +40,18 @@ kubeconfig: certs/client.crt certs/server-ca.crt certs/client.key
 		--user=elsa-admin \
 		--kubeconfig=elsa.yaml && \
 	kubectl config use-context elsa --kubeconfig=elsa.yaml
+
+.PHONY: setup
+setup: ## Configure local git hooks
+setup:
+	@git config core.hooksPath .githooks
+
+.PHONY: readme
+readme: ## Regenerate README.md from its template
+readme: README.md
+
+README.md: README.md.mustache mise.toml variables.tf makefile readme-data.sh
+	@./readme-data.sh | mustache README.md.mustache > README.md
 
 control_plane.ign: control_plane.bu $(FILES) $(CERTS)
 	@butane -d . $< > $@

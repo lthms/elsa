@@ -1,0 +1,44 @@
+# `elsa`
+
+Terraform-managed k3s cluster on Vultr with observability and
+coordinated upgrades.
+
+## Prerequisites
+
+| Tool | Version |
+| --- | --- |
+{{#tools}}
+| `{{name}}` | {{version}} |
+{{/tools}}
+
+Tools are managed by [mise](https://mise.jdx.dev); run `mise install`
+to set them up.
+
+## Usage
+
+| Target | Description |
+| --- | --- |
+{{#targets}}
+| `make {{name}}` | {{description}} |
+{{/targets}}
+
+## Configuration
+
+Variables are defined in `variables.tf` and supplied via a
+`main.tfvars` file.
+
+### Required
+
+| Variable | Description |
+| --- | --- |
+{{#required_variables}}
+| `{{name}}` | {{description}} |
+{{/required_variables}}
+
+### Optional
+
+| Variable | Description | Default |
+| --- | --- | --- |
+{{#optional_variables}}
+| `{{name}}` | {{description}} | `{{default}}` |
+{{/optional_variables}}

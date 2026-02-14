@@ -1,0 +1,18 @@
+name: Verify README.md
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - run: make readme
+
+      - run: git diff --exit-code README.md
