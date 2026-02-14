@@ -1,5 +1,9 @@
 # elsa
 
+## Deployment
+
+NEVER run `make deploy`, `make destroy`, or `terraform apply`/`terraform destroy` yourself. Deployment is always done by the user.
+
 ## Commit messages
 
 Follow the pattern: `Topic - short description of the change`. Examples:
