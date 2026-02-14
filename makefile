@@ -75,7 +75,10 @@ certs/client.crt: certs/client.key certs/client-ca.crt certs/client-ca.key
 		openssl x509 -req -CA certs/client-ca.crt -CAkey certs/client-ca.key \
 		-CAcreateserial -days 3650 -out $@ 2>/dev/null
 
-%: %.mustache
+FORCE:
+.PHONY: FORCE
+
+%: %.mustache FORCE
 	@yq -oy -p=hcl $(VARS) | \
 		yq ".betterstack_source_token = \"$(TF_VAR_betterstack_source_token)\"" | \
 		yq ".k3s_token = \"$(TF_VAR_k3s_token)\"" | \
