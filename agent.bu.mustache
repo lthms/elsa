@@ -51,6 +51,11 @@ storage:
 
           echo "Detected VPC IP: $VPC_IP on $VPC_IFACE"
 
+          # Generate a stable node password from hostname so reprovisions
+          # don't get rejected by the control plane
+          mkdir -p /etc/rancher/node
+          hostname -s | sha256sum | cut -d' ' -f1 > /etc/rancher/node/password
+
           # Write k3s drop-in config
           mkdir -p "$CONFIG_DIR"
           cat > "$CONFIG_DIR/50-vpc.yaml" <<EOF
