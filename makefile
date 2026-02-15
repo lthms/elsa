@@ -9,6 +9,7 @@ CERTS = certs/server-ca.crt certs/server-ca.key certs/client-ca.crt certs/client
 VARS ?= main.tfvars
 TF_VAR_betterstack_source_token ?= unset
 TF_VAR_k3s_token ?= unset
+TF_VAR_vultr_api_key ?= unset
 
 .PHONY: deploy
 deploy: ## Apply the Terraform configuration
@@ -93,6 +94,7 @@ define mustache_render
 @yq -oy -p=hcl $(VARS) | \
 	yq ".betterstack_source_token = \"$(TF_VAR_betterstack_source_token)\"" | \
 	yq ".k3s_token = \"$(TF_VAR_k3s_token)\"" | \
+	yq ".vultr_api_key = \"$(TF_VAR_vultr_api_key)\"" | \
 	mustache $< > $@
 endef
 

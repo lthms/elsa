@@ -53,6 +53,10 @@ storage:
       contents:
         local: files/traefik-config.yaml
       mode: 0644
+    - path: /etc/rancher/k3s/manifests/vultr-dns-secret.yaml
+      contents:
+        local: files/vultr-dns-secret.yaml
+      mode: 0600
     - path: /usr/local/bin/upgrade-os.sh
       mode: 0755
       contents:

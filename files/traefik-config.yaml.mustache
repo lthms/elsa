@@ -5,12 +5,20 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |
-    certResolvers:
+    certificatesResolvers:
       letsencrypt:
-        email: {{ acme_email }}
-        storage: /data/acme.json
-        tlsChallenge: true
+        acme:
+          email: {{ acme_email }}
+          storage: /data/acme.json
+          dnsChallenge:
+            provider: vultr
     ports:
       websecure:
         tls:
           certResolver: letsencrypt
+    env:
+      - name: VULTR_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: vultr-dns
+            key: api-key
