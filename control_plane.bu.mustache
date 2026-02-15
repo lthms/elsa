@@ -65,6 +65,10 @@ storage:
       contents:
         local: files/keel.yaml
       mode: 0644
+    - path: /etc/rancher/k3s/manifests/otelcol-k8s.yaml
+      contents:
+        local: files/otelcol-k8s.yaml
+      mode: 0600
     - path: /usr/local/bin/upgrade-os.sh
       mode: 0755
       contents:
