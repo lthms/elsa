@@ -1,8 +1,14 @@
 # elsa
 
+## kubectl
+
+Always use `kubectl --kubeconfig elsa.yaml` (in the repo root). The default `~/.kube/config` is not used for this cluster.
+
 ## Deployment
 
 NEVER run `make deploy`, `make destroy`, or `terraform apply`/`terraform destroy` yourself. Deployment is always done by the user.
+
+Each deployment recreates cloud instances and costs money. Before proposing any configuration change (CLI flags, Helm values, environment variables, etc.), ALWAYS verify the exact syntax against official documentation first. Do not guess flag names or assume conventions from other tools. A failed deploy because of a typo or nonexistent flag wastes a full cycle.
 
 ## Commit messages
 
