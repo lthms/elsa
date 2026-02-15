@@ -12,6 +12,9 @@ spec:
           storage: /data/acme.json
           dnsChallenge:
             provider: vultr
+    additionalArguments:
+      - "--certificatesresolvers.letsencrypt.acme.dnsChallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+      - "--certificatesresolvers.letsencrypt.acme.dnsChallenge.propagation.disableANSChecks=true"
     ports:
       websecure:
         tls:

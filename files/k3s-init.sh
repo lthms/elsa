@@ -68,6 +68,7 @@ cp "$CA_SRC"/client-ca.crt "$CA_SRC"/client-ca.key "$TLS_DIR"/
 mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_DIR/50-vpc.yaml" <<EOF
 node-ip: "${VPC_IP}"
+node-external-ip: "${PUBLIC_IP}"
 tls-san:
   - "${PUBLIC_IP}"
 flannel-iface: "${VPC_IFACE}"

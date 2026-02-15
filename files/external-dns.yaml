@@ -1,4 +1,3 @@
-# https://github.com/vultr/external-dns-vultr-webhook
 ---
 apiVersion: v1
 kind: ServiceAccount

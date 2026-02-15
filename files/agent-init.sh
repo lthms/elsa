@@ -7,6 +7,22 @@ set -euo pipefail
 
 CONFIG_DIR="/etc/rancher/k3s/config.yaml.d"
 
+# Detect public IP on enp1s0
+PUBLIC_IP=""
+for i in $(seq 1 60); do
+  PUBLIC_IP=$(ip -4 -o addr show enp1s0 2>/dev/null | awk '{print $4}' | cut -d/ -f1)
+  [ -n "$PUBLIC_IP" ] && break
+  echo "Waiting for public IP on enp1s0 (attempt $i/60)..."
+  sleep 1
+done
+
+if [ -z "$PUBLIC_IP" ]; then
+  echo "ERROR: Failed to detect public IP on enp1s0 after 60 attempts"
+  exit 1
+fi
+
+echo "Detected public IP: $PUBLIC_IP"
+
 # Detect VPC IP and interface (10.0.0.x range, brought up by configure-vpc.service)
 VPC_IP=""
 VPC_IFACE=""
@@ -37,5 +53,6 @@ hostname -s | sha256sum | cut -d' ' -f1 > /etc/rancher/node/password
 mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_DIR/50-vpc.yaml" <<EOF
 node-ip: "${VPC_IP}"
+node-external-ip: "${PUBLIC_IP}"
 flannel-iface: "${VPC_IFACE}"
 EOF
