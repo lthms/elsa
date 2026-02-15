@@ -61,6 +61,10 @@ storage:
       contents:
         local: files/vultr-dns-secret.yaml
       mode: 0600
+    - path: /etc/rancher/k3s/manifests/keel.yaml
+      contents:
+        local: files/keel.yaml
+      mode: 0644
     - path: /usr/local/bin/upgrade-os.sh
       mode: 0755
       contents:

@@ -1,0 +1,25 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: keel
+  namespace: kube-system
+spec:
+  repo: https://charts.keel.sh
+  chart: keel
+  targetNamespace: kube-system
+  valuesContent: |
+    polling:
+      enabled: true
+      defaultSchedule: "@every 5m"
+    helmProvider:
+      enabled: false
+    service:
+      enabled: false
+    webhookRelay:
+      enabled: false
+    gcr:
+      enabled: false
+    ecr:
+      enabled: false
+    basicauth:
+      enabled: false
