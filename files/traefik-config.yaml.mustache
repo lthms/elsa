@@ -19,6 +19,8 @@ spec:
       websecure:
         tls:
           certResolver: letsencrypt
+    persistence:
+      enabled: true
     env:
       - name: VULTR_API_KEY
         valueFrom:
