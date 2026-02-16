@@ -77,6 +77,14 @@ storage:
       mode: 0755
       contents:
         local: files/fleetlock-release.sh
+    - path: /var/lib/.fresh-deploy
+      mode: 0644
+      contents:
+        inline: ""
+    - path: /usr/local/bin/wipe-old-agents.sh
+      mode: 0755
+      contents:
+        local: files/wipe-old-agents.sh
     - path: /usr/local/bin/rebase-os.sh
       mode: 0755
       contents:
@@ -203,6 +211,22 @@ systemd:
         Type=oneshot
         RemainAfterExit=yes
         ExecStart=/usr/local/bin/fleetlock-release.sh
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: wipe-old-agents.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Remove stale agent node objects after a fresh deploy
+        After=k3s.service
+        Requires=k3s.service
+        ConditionPathExists=/var/lib/.fresh-deploy
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/local/bin/wipe-old-agents.sh
 
         [Install]
         WantedBy=multi-user.target

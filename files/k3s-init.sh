@@ -6,6 +6,7 @@
 set -euo pipefail
 
 IP_FILE="/var/lib/rancher/k3s/.node-ip"
+DEPLOY_MARKER="/var/lib/.fresh-deploy"
 TLS_DIR="/var/lib/rancher/k3s/server/tls"
 CA_SRC="/etc/rancher/k3s/tls"
 CONFIG_DIR="/etc/rancher/k3s/config.yaml.d"
@@ -48,15 +49,18 @@ fi
 echo "Detected VPC IP: $VPC_IP on $VPC_IFACE"
 
 # Compare with last known VPC IP
-OLD_IP=""
+OLD_VPC_IP=""
 if [ -f "$IP_FILE" ]; then
-  OLD_IP=$(cat "$IP_FILE")
+  OLD_VPC_IP=$(cat "$IP_FILE")
 fi
 
-if [ "$VPC_IP" != "$OLD_IP" ]; then
-  echo "IP changed ($OLD_IP -> $VPC_IP), wiping stale server state"
+if [ "$VPC_IP" != "$OLD_VPC_IP" ]; then
+  echo "VPC IP changed ($OLD_VPC_IP -> $VPC_IP), wiping TLS + DB"
   rm -rf "$TLS_DIR"
   rm -rf /var/lib/rancher/k3s/server/db
+elif [ -f "$DEPLOY_MARKER" ]; then
+  echo "Fresh deploy detected, wiping TLS only"
+  rm -rf "$TLS_DIR"
 fi
 
 # Always copy CA certs

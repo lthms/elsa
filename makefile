@@ -46,6 +46,7 @@ kubeconfig: certs/client.crt certs/server-ca.crt certs/client.key
 		--kubeconfig=elsa.yaml && \
 	kubectl config use-context elsa --kubeconfig=elsa.yaml
 
+
 .PHONY: setup
 setup: ## Configure local git hooks
 setup:
