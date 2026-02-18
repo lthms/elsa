@@ -6,6 +6,8 @@
 set -euo pipefail
 
 CONFIG_DIR="/etc/rancher/k3s/config.yaml.d"
+DEPLOY_MARKER="/var/lib/.fresh-deploy"
+TLS_DIR="/etc/rancher/k3s/tls"
 
 # Detect public IP on enp1s0
 PUBLIC_IP=""
@@ -56,3 +58,47 @@ node-ip: "${VPC_IP}"
 node-external-ip: "${PUBLIC_IP}"
 flannel-iface: "${VPC_IFACE}"
 EOF
+
+# On fresh deploy, delete our own stale node object before k3s-agent starts.
+# This avoids the "node not found" loop that occurs when a previous node
+# object with the same name still exists with old IPs.
+if [ -f "$DEPLOY_MARKER" ]; then
+  echo "Fresh deploy detected, deleting stale node object if present..."
+
+  SERVER_URL=$(grep '^server:' /etc/rancher/k3s/config.yaml | awk '{print $2}' | tr -d '"')
+  NODE_NAME=$(hostname -s)
+
+  # Wait for the k3s API to become reachable
+  for i in $(seq 1 60); do
+    if k3s kubectl --server="$SERVER_URL" \
+        --certificate-authority="$TLS_DIR/server-ca.crt" \
+        --client-certificate="$TLS_DIR/agent-cleanup.crt" \
+        --client-key="$TLS_DIR/agent-cleanup.key" \
+        get node "$NODE_NAME" &>/dev/null; then
+      echo "Node $NODE_NAME found, deleting..."
+      k3s kubectl --server="$SERVER_URL" \
+        --certificate-authority="$TLS_DIR/server-ca.crt" \
+        --client-certificate="$TLS_DIR/agent-cleanup.crt" \
+        --client-key="$TLS_DIR/agent-cleanup.key" \
+        delete node "$NODE_NAME" --ignore-not-found --wait=false
+      break
+    fi
+
+    # Distinguish "API not ready" from "node not found"
+    HTTP_CODE=$(k3s kubectl --server="$SERVER_URL" \
+        --certificate-authority="$TLS_DIR/server-ca.crt" \
+        --client-certificate="$TLS_DIR/agent-cleanup.crt" \
+        --client-key="$TLS_DIR/agent-cleanup.key" \
+        get node "$NODE_NAME" -o name 2>&1) || true
+    if echo "$HTTP_CODE" | grep -q "NotFound\|not found"; then
+      echo "Node $NODE_NAME does not exist, nothing to delete."
+      break
+    fi
+
+    echo "Waiting for k3s API (attempt $i/60)..."
+    sleep 5
+  done
+
+  rm -f "$DEPLOY_MARKER"
+  rm -f "$TLS_DIR/agent-cleanup.crt" "$TLS_DIR/agent-cleanup.key"
+fi

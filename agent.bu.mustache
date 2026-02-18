@@ -41,6 +41,22 @@ storage:
       mode: 0755
       contents:
         local: files/rebase-os.sh
+    - path: /etc/rancher/k3s/tls/server-ca.crt
+      contents:
+        local: certs/server-ca.crt
+      mode: 0644
+    - path: /etc/rancher/k3s/tls/agent-cleanup.crt
+      contents:
+        local: certs/agent-cleanup.crt
+      mode: 0644
+    - path: /etc/rancher/k3s/tls/agent-cleanup.key
+      contents:
+        local: certs/agent-cleanup.key
+      mode: 0600
+    - path: /var/lib/.fresh-deploy
+      mode: 0644
+      contents:
+        inline: ""
 
 systemd:
   units:

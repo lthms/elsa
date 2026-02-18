@@ -62,7 +62,7 @@ README.md: README.md.mustache variables.tf makefile readme-data.sh
 control_plane.ign: control_plane.bu $(FILES) $(CERTS)
 	@butane -d . $< > $@
 
-agent.ign: agent.bu $(FILES)
+agent.ign: agent.bu $(FILES) certs/server-ca.crt certs/agent-cleanup.crt certs/agent-cleanup.key
 	@butane -d . $< > $@
 
 certs/server-ca.key:
@@ -85,6 +85,15 @@ certs/client.key:
 
 certs/client.crt: certs/client.key certs/client-ca.crt certs/client-ca.key
 	@openssl req -new -key certs/client.key -subj "/O=system:masters/CN=admin" 2>/dev/null | \
+		openssl x509 -req -CA certs/client-ca.crt -CAkey certs/client-ca.key \
+		-CAcreateserial -days 3650 -out $@ 2>/dev/null
+
+certs/agent-cleanup.key:
+	@mkdir -p certs
+	@openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out $@ 2>/dev/null
+
+certs/agent-cleanup.crt: certs/agent-cleanup.key certs/client-ca.crt certs/client-ca.key
+	@openssl req -new -key certs/agent-cleanup.key -subj "/CN=agent-cleanup" 2>/dev/null | \
 		openssl x509 -req -CA certs/client-ca.crt -CAkey certs/client-ca.key \
 		-CAcreateserial -days 3650 -out $@ 2>/dev/null
 
