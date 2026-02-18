@@ -92,6 +92,7 @@ spec:
             - --webhook-provider-url=http://localhost:8888
             - --registry=txt
             - --txt-owner-id=elsa
+            - --txt-prefix=%{record_type}.
             - --policy=sync
         - name: vultr-webhook
           image: vultr/external-dns-vultr-webhook:v0.1.0
