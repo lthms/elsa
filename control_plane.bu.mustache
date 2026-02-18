@@ -135,7 +135,7 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/usr/local/bin/configure-vpc.sh
+        ExecStart=/usr/local/bin/configure-vpc.sh 10.0.0.3
 
         [Install]
         WantedBy=multi-user.target

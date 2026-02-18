@@ -90,3 +90,9 @@ variable "agent_count" {
   default     = 0
 }
 
+variable "control_plane_vpc_ip" {
+  type        = string
+  description = "Static VPC IP for the control plane node"
+  default     = "10.0.0.3"
+}
+

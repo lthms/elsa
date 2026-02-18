@@ -54,3 +54,4 @@ Variables are defined in `variables.tf` and supplied via a
 | `agent_plan` | Vultr instance plan for agent nodes | `vc2-1c-2gb` |
 | `control_plane_storage_gb` | Block storage size in GB for the control plane | `10` |
 | `agent_count` | Number of k3s agent nodes to deploy | `0` |
+| `control_plane_vpc_ip` | Static VPC IP for the control plane node | `10.0.0.3` |

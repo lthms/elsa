@@ -35,7 +35,10 @@ resource "vultr_instance" "agent" {
   plan    = var.agent_plan
   os_id   = "391"
 
-  user_data = replace(file("agent.ign"), "__K3S_SERVER_IP__", vultr_instance.control_plane.internal_ip)
+  user_data = replace(
+    replace(file("agent.ign"), "__VPC_STATIC_IP__", "10.0.0.${20 + count.index}"),
+    "__K3S_SERVER_IP__", var.control_plane_vpc_ip
+  )
 
   vpc_ids = [vultr_vpc.cluster.id]
 

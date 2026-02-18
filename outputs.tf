@@ -7,7 +7,7 @@ output "node_ip" {
 }
 
 output "node_vpc_ip" {
-  value = vultr_instance.control_plane.internal_ip
+  value = var.control_plane_vpc_ip
 }
 
 output "agent_ips" {
@@ -15,7 +15,7 @@ output "agent_ips" {
 }
 
 output "agent_vpc_ips" {
-  value = vultr_instance.agent[*].internal_ip
+  value = [for i in range(var.agent_count) : "10.0.0.${20 + i}"]
 }
 
 output "status_page_url" {

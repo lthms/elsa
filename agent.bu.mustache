@@ -87,7 +87,7 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/usr/local/bin/configure-vpc.sh
+        ExecStart=/usr/local/bin/configure-vpc.sh __VPC_STATIC_IP__
 
         [Install]
         WantedBy=multi-user.target

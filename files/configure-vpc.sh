@@ -5,9 +5,10 @@
 
 set -euo pipefail
 
+VPC_IP="$1"
+
 META=$(curl -sf http://169.254.169.254/v1.json)
 
-VPC_IP=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .ipv4.address')
 VPC_MASK=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .ipv4.netmask')
 VPC_MAC=$(echo "$META" | jq -r '.interfaces[] | select(.["network-type"]=="private") | .mac')
 
