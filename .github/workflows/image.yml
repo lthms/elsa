@@ -30,4 +30,5 @@ jobs:
           context: .
           file: Containerfile
           push: true
+          pull: true
           tags: ${{ env.IMAGE }}
