@@ -1,5 +1,9 @@
 # elsa
 
+## Tooling philosophy
+
+Prefer off-the-shelf tools over custom scripts. Before writing makefile targets, shell helpers, or bespoke download logic, check whether an existing tool already solves the problem. Packaging in mise and support by Renovate are strong signals in favor of adopting a tool.
+
 ## kubectl
 
 Always use `kubectl --kubeconfig elsa.yaml` (in the repo root). The default `~/.kube/config` is not used for this cluster.
