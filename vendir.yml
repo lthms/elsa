@@ -1,0 +1,12 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: vendor/cert-manager-webhook-vultr
+    contents:
+      - path: .
+        git:
+          url: https://github.com/vultr/cert-manager-webhook-vultr
+          ref: helm-v0.4.1
+        includePaths:
+          - deploy/cert-manager-webhook-vultr/**
+        newRootPath: deploy/cert-manager-webhook-vultr

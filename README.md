@@ -9,6 +9,7 @@ coordinated upgrades.
 - `yq`
 - `butane`
 - `mustache`
+- `vendir`
 
 Tools are managed by [mise](https://mise.jdx.dev); run `mise install`
 to set them up.

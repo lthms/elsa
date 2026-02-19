@@ -11,6 +11,8 @@ TF_VAR_betterstack_source_token ?= unset
 TF_VAR_k3s_token ?= unset
 TF_VAR_vultr_api_key ?= unset
 
+WEBHOOK_VULTR_CHART_TGZ = .build/cert-manager-webhook-vultr.tgz
+
 .PHONY: deploy
 deploy: ## Apply the Terraform configuration
 deploy: control_plane.ign agent.ign
@@ -59,7 +61,7 @@ readme: README.md
 README.md: README.md.mustache variables.tf makefile readme-data.sh
 	@./readme-data.sh | mustache README.md.mustache > README.md
 
-control_plane.ign: control_plane.bu $(FILES) $(CERTS)
+control_plane.ign: control_plane.bu $(FILES) $(CERTS) $(WEBHOOK_VULTR_CHART_TGZ)
 	@butane -d . $< > $@
 
 agent.ign: agent.bu $(FILES) certs/server-ca.crt certs/agent-cleanup.crt certs/agent-cleanup.key
@@ -97,14 +99,21 @@ certs/agent-cleanup.crt: certs/agent-cleanup.key certs/client-ca.crt certs/clien
 		openssl x509 -req -CA certs/client-ca.crt -CAkey certs/client-ca.key \
 		-CAcreateserial -days 3650 -out $@ 2>/dev/null
 
+$(WEBHOOK_VULTR_CHART_TGZ):
+	@mkdir -p .build && \
+	helm package vendor/cert-manager-webhook-vultr -d .build/ && \
+	mv .build/cert-manager-webhook-vultr-*.tgz $@
+
 FORCE:
 .PHONY: FORCE
 
 define mustache_render
-@yq -oy -p=hcl $(VARS) | \
+@WEBHOOK_CHART=$$(base64 -w0 $(WEBHOOK_VULTR_CHART_TGZ) 2>/dev/null || echo "") && \
+yq -oy -p=hcl $(VARS) | \
 	yq ".betterstack_source_token = \"$(TF_VAR_betterstack_source_token)\"" | \
 	yq ".k3s_token = \"$(TF_VAR_k3s_token)\"" | \
 	yq ".vultr_api_key = \"$(TF_VAR_vultr_api_key)\"" | \
+	yq ".webhook_chart_content = \"$$WEBHOOK_CHART\"" | \
 	mustache $< > $@
 endef
 

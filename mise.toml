@@ -3,3 +3,4 @@
 "yq" = "4.52.4"
 "github:coreos/butane" = "0.26.0"
 "github:cbroglie/mustache" = "1.4.0"
+"vendir" = "0.45.2"

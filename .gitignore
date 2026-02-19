@@ -4,3 +4,5 @@ agent.ign
 *.tfvars
 certs/
 elsa.yaml
+.build/
+vendor/

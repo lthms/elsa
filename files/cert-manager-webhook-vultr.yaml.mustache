@@ -1,0 +1,13 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: cert-manager-webhook-vultr
+  namespace: kube-system
+spec:
+  chartContent: {{{ webhook_chart_content }}}
+  targetNamespace: kube-system
+  valuesContent: |
+    secretName: vultr-dns
+    certManager:
+      namespace: kube-system
+      serviceAccountName: cert-manager

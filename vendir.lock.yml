@@ -1,0 +1,11 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: 'Merge pull request #112 from vultr/Fix-SA-Issue...'
+      sha: 63236ae3a94ba875fff53b03a0b3e67896709dd4
+      tags:
+      - helm-v0.4.1
+    path: .
+  path: vendor/cert-manager-webhook-vultr
+kind: LockConfig
