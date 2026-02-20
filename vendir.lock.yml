@@ -8,4 +8,12 @@ directories:
       - helm-v0.4.1
     path: .
   path: vendor/cert-manager-webhook-vultr
+- contents:
+  - git:
+      commitTitle: 'Release v0.17.1 #patch'
+      sha: acb873ad55f560f2fbce4ac43ba54d041aff6df8
+      tags:
+      - v0.17.1
+    path: .
+  path: vendor/vultr-csi
 kind: LockConfig

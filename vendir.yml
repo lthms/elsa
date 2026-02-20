@@ -10,3 +10,12 @@ directories:
         includePaths:
           - deploy/cert-manager-webhook-vultr/**
         newRootPath: deploy/cert-manager-webhook-vultr
+  - path: vendor/vultr-csi
+    contents:
+      - path: .
+        git:
+          url: https://github.com/vultr/vultr-csi
+          ref: v0.17.1
+        includePaths:
+          - docs/releases/v0.17.1.yml
+        newRootPath: docs/releases

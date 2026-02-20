@@ -12,6 +12,7 @@ TF_VAR_k3s_token ?= unset
 TF_VAR_vultr_api_key ?= unset
 
 WEBHOOK_VULTR_CHART_TGZ = .build/cert-manager-webhook-vultr.tgz
+VULTR_CSI_MANIFEST = vendor/vultr-csi/v0.17.1.yml
 
 .PHONY: deploy
 deploy: ## Apply the Terraform configuration
@@ -61,7 +62,7 @@ readme: README.md
 README.md: README.md.mustache variables.tf makefile readme-data.sh
 	@./readme-data.sh | mustache README.md.mustache > README.md
 
-control_plane.ign: control_plane.bu $(FILES) $(CERTS) $(WEBHOOK_VULTR_CHART_TGZ)
+control_plane.ign: control_plane.bu $(FILES) $(CERTS) $(WEBHOOK_VULTR_CHART_TGZ) $(VULTR_CSI_MANIFEST)
 	@butane -d . $< > $@
 
 agent.ign: agent.bu $(FILES) certs/server-ca.crt certs/agent-cleanup.crt certs/agent-cleanup.key

@@ -61,6 +61,14 @@ storage:
       contents:
         local: files/vultr-dns-secret.yaml
       mode: 0600
+    - path: /etc/rancher/k3s/manifests/vultr-csi-secret.yaml
+      contents:
+        local: files/vultr-csi-secret.yaml
+      mode: 0600
+    - path: /etc/rancher/k3s/manifests/vultr-csi.yaml
+      contents:
+        local: vendor/vultr-csi/v0.17.1.yml
+      mode: 0644
     - path: /etc/rancher/k3s/manifests/cert-manager.yaml
       contents:
         local: files/cert-manager.yaml
