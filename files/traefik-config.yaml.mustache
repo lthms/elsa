@@ -5,25 +5,7 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |
-    certificatesResolvers:
-      letsencrypt:
-        acme:
-          email: {{ acme_email }}
-          storage: /data/acme.json
-          dnsChallenge:
-            provider: vultr
-    additionalArguments:
-      - "--certificatesresolvers.letsencrypt.acme.dnsChallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
-      - "--certificatesresolvers.letsencrypt.acme.dnsChallenge.propagation.disableANSChecks=true"
     ports:
       websecure:
         tls:
-          certResolver: letsencrypt
-    persistence:
-      enabled: true
-    env:
-      - name: VULTR_API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: vultr-dns
-            key: api-key
+          enabled: true
