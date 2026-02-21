@@ -8,6 +8,8 @@ Prefer off-the-shelf tools over custom scripts. Before writing makefile targets,
 
 Always use `kubectl --kubeconfig elsa.yaml` (in the repo root). The default `~/.kube/config` is not used for this cluster.
 
+When you have the tools to answer a question yourself (e.g., `kubectl`, log files, cluster state), do not ask the user — go check directly.
+
 ## Deployment
 
 NEVER run `make deploy`, `make destroy`, or `terraform apply`/`terraform destroy` yourself. Deployment is always done by the user.
