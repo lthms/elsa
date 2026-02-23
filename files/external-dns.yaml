@@ -90,6 +90,10 @@ spec:
       containers:
         - name: external-dns
           image: registry.k8s.io/external-dns/external-dns:v0.20.0
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
           args:
             - --source=ingress
             - --source=service
@@ -101,6 +105,10 @@ spec:
             - --policy=sync
         - name: vultr-webhook
           image: ghcr.io/lthms/external-dns-vultr-webhook:latest
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
           ports:
             - containerPort: 8888
               name: webhook
