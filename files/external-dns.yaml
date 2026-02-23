@@ -81,12 +81,6 @@ spec:
         name: external-dns
     spec:
       serviceAccountName: external-dns
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: "true"
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
       containers:
         - name: external-dns
           image: registry.k8s.io/external-dns/external-dns:v0.20.0

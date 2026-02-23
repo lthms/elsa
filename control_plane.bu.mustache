@@ -109,6 +109,10 @@ storage:
       mode: 0755
       contents:
         local: files/rebase-os.sh
+    - path: /usr/local/bin/enforce-taint.sh
+      mode: 0755
+      contents:
+        local: files/enforce-taint.sh
 
 systemd:
   units:
@@ -218,6 +222,22 @@ systemd:
 
         [Install]
         WantedBy=timers.target
+
+    - name: enforce-taint.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Enforce control-plane taint
+        After=k3s.service
+        Requires=k3s.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/local/bin/enforce-taint.sh
+
+        [Install]
+        WantedBy=multi-user.target
 
     - name: fleetlock-release.service
       enabled: true

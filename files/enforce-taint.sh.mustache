@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+EXPECTED_EFFECT="{{ control_plane_taint_effect }}"
+NODE_NAME=$(hostname)
+
+# Wait for API and node registration
+until k3s kubectl get node "$NODE_NAME" &>/dev/null; do
+  sleep 5
+done
+
+# Check current taint effect
+CURRENT_EFFECT=$(k3s kubectl get node "$NODE_NAME" \
+  -o jsonpath='{.spec.taints[?(@.key=="node-role.kubernetes.io/control-plane")].effect}')
+
+if [ "$CURRENT_EFFECT" = "$EXPECTED_EFFECT" ]; then
+  echo "Control-plane taint is correct: $EXPECTED_EFFECT"
+  exit 0
+fi
+
+echo "Taint mismatch: expected=$EXPECTED_EFFECT current=$CURRENT_EFFECT"
+echo "Deleting node and restarting k3s to force re-registration..."
+k3s kubectl delete node "$NODE_NAME"
+systemctl restart k3s.service --no-block

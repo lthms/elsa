@@ -96,3 +96,8 @@ variable "control_plane_vpc_ip" {
   default     = "10.0.0.3"
 }
 
+variable "control_plane_taint_effect" {
+  type        = string
+  description = "Taint effect for the control-plane node (e.g. NoSchedule, PreferNoSchedule)"
+}
+

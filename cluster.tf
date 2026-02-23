@@ -2,6 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+resource "terraform_data" "validate_taint" {
+  lifecycle {
+    precondition {
+      condition     = var.control_plane_taint_effect != "NoSchedule" || var.agent_count > 0
+      error_message = "control_plane_taint_effect cannot be NoSchedule when agent_count is 0 — no nodes would be schedulable."
+    }
+  }
+}
+
 resource "vultr_vpc" "cluster" {
   region         = var.region
   description    = "elsa-vpc"
