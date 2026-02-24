@@ -109,7 +109,7 @@ data:
       k8s_events:
         auth_type: serviceAccount
       k8s_cluster:
-        collection_interval: 10s
+        collection_interval: 60s
         auth_type: serviceAccount
         node_conditions_to_report:
           - Ready
@@ -118,6 +118,11 @@ data:
         allocatable_types_to_report:
           - cpu
           - memory
+
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 8192
 
     exporters:
       otlphttp:
@@ -129,9 +134,11 @@ data:
       pipelines:
         logs:
           receivers: [k8s_events]
+          processors: [batch]
           exporters: [otlphttp]
         metrics:
           receivers: [k8s_cluster]
+          processors: [batch]
           exporters: [otlphttp]
 ---
 apiVersion: apps/v1

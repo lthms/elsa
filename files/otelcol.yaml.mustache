@@ -1,5 +1,6 @@
 receivers:
   journald:
+    priority: info
   hostmetrics:
     collection_interval: 60s
     scrapers:
@@ -11,6 +12,9 @@ receivers:
       load:
 
 processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 8192
   resourcedetection:
     detectors: [system]
     system:
@@ -31,9 +35,9 @@ service:
   pipelines:
     logs:
       receivers: [journald]
-      processors: [resourcedetection]
+      processors: [resourcedetection, batch]
       exporters: [otlphttp]
     metrics:
       receivers: [hostmetrics]
-      processors: [resourcedetection]
+      processors: [resourcedetection, batch]
       exporters: [otlphttp]
