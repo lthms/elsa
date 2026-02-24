@@ -17,6 +17,7 @@ VULTR_CSI_MANIFEST = vendor/vultr-csi/v0.17.1.yml
 .PHONY: deploy
 deploy: ## Apply the Terraform configuration
 deploy: control_plane.ign agent.ign
+	@./pre_deploy.sh -var-file=$(VARS)
 	@terraform apply -var-file=$(VARS)
 
 .PHONY: plan
@@ -27,6 +28,7 @@ plan: control_plane.ign agent.ign
 .PHONY: destroy
 destroy: ## Tear down all infrastructure
 destroy: control_plane.ign agent.ign
+	@./pre_deploy.sh -var-file=$(VARS) -destroy
 	@terraform destroy -var-file=$(VARS)
 
 .PHONY: kubeconfig
