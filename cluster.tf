@@ -54,5 +54,10 @@ resource "vultr_instance" "agent" {
   label    = "elsa-agent-${count.index}"
   tags     = ["elsa"]
   hostname = "elsa-agent-${count.index}"
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "kubectl --kubeconfig elsa.yaml drain ${self.hostname} --ignore-daemonsets --delete-emptydir-data --force --timeout=120s || true"
+  }
 }
 
