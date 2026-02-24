@@ -1,2 +1,4 @@
 token: "{{ k3s_token }}"
 server: "https://__K3S_SERVER_IP__:6443"
+node-label:
+  - "svccontroller.k3s.cattle.io/enablelb=true"
