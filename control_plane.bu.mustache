@@ -105,6 +105,10 @@ storage:
       contents:
         local: files/agent-cleanup-rbac.yaml
       mode: 0644
+    - path: /etc/rancher/k3s/manifests/coredns-autoscaler.yaml
+      contents:
+        local: files/coredns-autoscaler.yaml
+      mode: 0644
     - path: /usr/local/bin/rebase-os.sh
       mode: 0755
       contents:
