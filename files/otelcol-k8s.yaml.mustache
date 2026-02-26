@@ -120,6 +120,11 @@ data:
           - memory
 
     processors:
+      filter:
+        error_mode: ignore
+        logs:
+          log_record:
+            - 'severity_number < SEVERITY_NUMBER_WARN'
       batch:
         timeout: 5s
         send_batch_size: 8192
@@ -134,7 +139,7 @@ data:
       pipelines:
         logs:
           receivers: [k8s_events]
-          processors: [batch]
+          processors: [filter, batch]
           exporters: [otlphttp]
         metrics:
           receivers: [k8s_cluster]
