@@ -40,6 +40,7 @@ rules:
       - leases
     verbs:
       - create
+      - delete
       - get
       - update
 ---
@@ -98,6 +99,33 @@ spec:
               scheme: HTTP
               port: 8080
               path: /-/healthy
+        - name: janitor
+          image: docker.io/alpine/k8s:1.35.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              LEASE_NAME="fleetlock-default"
+              LEASE_NS="default"
+              while true; do
+                holder=$(kubectl get lease "$LEASE_NAME" -n "$LEASE_NS" \
+                  -o jsonpath='{.spec.holderIdentity}' 2>/dev/null)
+                if [ -n "$holder" ]; then
+                  if ! kubectl get nodes -o jsonpath='{.items[*].status.nodeInfo.machineID}' \
+                    | grep -qw "$holder"; then
+                    echo "Lease holder $holder not found among current nodes, deleting lease"
+                    kubectl delete lease "$LEASE_NAME" -n "$LEASE_NS"
+                  fi
+                fi
+                sleep 1800
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 20Mi
+            limits:
+              cpu: 20m
+              memory: 30Mi
 ---
 apiVersion: v1
 kind: Service
