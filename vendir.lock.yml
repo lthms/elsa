@@ -10,10 +10,10 @@ directories:
   path: vendor/cert-manager-webhook-vultr
 - contents:
   - git:
-      commitTitle: 'Release v0.17.1 #patch'
-      sha: acb873ad55f560f2fbce4ac43ba54d041aff6df8
+      commitTitle: 'Release v0.18.0 #minor'
+      sha: 4f2281bba49faad8c0f4bc3dc03ba11a37ec7956
       tags:
-      - v0.17.1
+      - v0.18.0
     path: .
   path: vendor/vultr-csi
 kind: LockConfig
