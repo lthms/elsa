@@ -14,7 +14,7 @@ terraform {
   required_providers {
     vultr = {
       source = "vultr/vultr"
-      version = "2.30.1"
+      version = "2.32.0"
     }
     betteruptime = {
       source  = "BetterStackHQ/better-uptime"
